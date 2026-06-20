@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuccessRouteImport } from './routes/success'
-import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -21,11 +20,6 @@ import { Route as AdminApplicationsIdRouteImport } from './routes/admin.applicat
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApplyRoute = ApplyRouteImport.update({
-  id: '/apply',
-  path: '/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -62,7 +56,6 @@ const AdminApplicationsIdRoute = AdminApplicationsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/apply': typeof ApplyRoute
   '/success': typeof SuccessRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
@@ -71,7 +64,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/apply': typeof ApplyRoute
   '/success': typeof SuccessRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
@@ -82,7 +74,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/apply': typeof ApplyRoute
   '/success': typeof SuccessRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
@@ -94,7 +85,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/apply'
     | '/success'
     | '/admin/applications'
     | '/admin/login'
@@ -103,7 +93,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/apply'
     | '/success'
     | '/admin/applications'
     | '/admin/login'
@@ -113,7 +102,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/apply'
     | '/success'
     | '/admin/applications'
     | '/admin/login'
@@ -124,7 +112,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  ApplyRoute: typeof ApplyRoute
   SuccessRoute: typeof SuccessRoute
 }
 
@@ -135,13 +122,6 @@ declare module '@tanstack/react-router' {
       path: '/success'
       fullPath: '/success'
       preLoaderRoute: typeof SuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apply': {
-      id: '/apply'
-      path: '/apply'
-      fullPath: '/apply'
-      preLoaderRoute: typeof ApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -217,7 +197,6 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  ApplyRoute: ApplyRoute,
   SuccessRoute: SuccessRoute,
 }
 export const routeTree = rootRouteImport
