@@ -50,33 +50,40 @@ function ApplicationsList() {
         </select>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-muted/40 text-left text-[11px] uppercase tracking-widest text-muted-foreground">
               <tr>
-                <th className="px-5 py-3 font-semibold">Applicant</th>
-                <th className="px-5 py-3 font-semibold">Loan</th>
-                <th className="px-5 py-3 font-semibold">Purpose</th>
-                <th className="px-5 py-3 font-semibold">Submitted</th>
-                <th className="px-5 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 text-right font-semibold">Actions</th>
+                <th className="px-6 py-4 font-bold">Applicant</th>
+                <th className="px-6 py-4 font-bold">Loan</th>
+                <th className="px-6 py-4 font-bold">Purpose</th>
+                <th className="px-6 py-4 font-bold">Submitted</th>
+                <th className="px-6 py-4 font-bold">Status</th>
+                <th className="px-6 py-4 text-right font-bold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.map((a) => (
-                <tr key={a.id} className="hover:bg-muted/30">
-                  <td className="px-5 py-4">
-                    <div className="font-medium">{a.firstName} {a.lastName}</div>
-                    <div className="text-xs text-muted-foreground">{a.email}</div>
+                <tr key={a.id} className="transition hover:bg-muted/30">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl gradient-brand text-xs font-bold text-primary-foreground">
+                        {a.firstName?.[0]}{a.lastName?.[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold">{a.firstName} {a.lastName}</div>
+                        <div className="truncate text-xs text-muted-foreground">{a.email}</div>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-5 py-4 font-semibold">${Number(a.loanAmount || 0).toLocaleString()}</td>
-                  <td className="px-5 py-4 text-muted-foreground">{a.loanPurpose || "—"}</td>
-                  <td className="px-5 py-4 text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</td>
-                  <td className="px-5 py-4"><StatusBadge status={a.status} /></td>
-                  <td className="px-5 py-4 text-right">
+                  <td className="px-6 py-4 font-bold">${Number(a.loanAmount || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{a.loanPurpose || "—"}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4"><StatusBadge status={a.status} /></td>
+                  <td className="px-6 py-4 text-right">
                     <Link to="/admin/applications/$id" params={{ id: a.id }}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+                      className="inline-flex items-center gap-1.5 rounded-xl gradient-brand px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-sm transition hover:scale-105 hover:shadow-glow">
                       <Eye className="h-3.5 w-3.5" /> View
                     </Link>
                   </td>
@@ -95,10 +102,10 @@ function ApplicationsList() {
 
 function StatusBadge({ status }: { status: LoanApplication["status"] }) {
   const map: Record<LoanApplication["status"], string> = {
-    pending: "bg-[color:var(--gold)]/15 text-[color:var(--gold)]",
-    approved: "bg-[color:var(--success)]/15 text-[color:var(--success)]",
+    pending: "bg-amber-500/15 text-amber-600",
+    approved: "bg-accent/15 text-accent",
     rejected: "bg-destructive/15 text-destructive",
     review: "bg-primary/10 text-primary",
   };
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${map[status]}`}>{status}</span>;
+  return <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${map[status]}`}>{status}</span>;
 }

@@ -1,26 +1,30 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Loader2, Upload, X } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  ArrowLeft, ArrowRight, Check, Loader2, Upload, X,
+  User, Briefcase, Wallet, Users, Building2, FileText,
+  ShieldCheck, Sparkles, TrendingUp, Lock,
+} from "lucide-react";
 import { api } from "@/lib/api";
 import type { LoanApplicationDraft } from "@/lib/loan-types";
 
 export const Route = createFileRoute("/apply")({
   head: () => ({
     meta: [
-      { title: "Apply for a Loan — Meridian Finance" },
-      { name: "description", content: "Complete your loan application in a few simple steps." },
+      { title: "Apply for a Loan — Meridian" },
+      { name: "description", content: "Complete your loan application in 5 minutes." },
     ],
   }),
   component: ApplyPage,
 });
 
 const STEPS = [
-  { id: 1, title: "Personal Information", short: "Personal" },
-  { id: 2, title: "Employment Information", short: "Employment" },
-  { id: 3, title: "Loan Information", short: "Loan" },
-  { id: 4, title: "Next of Kin Information", short: "Next of Kin" },
-  { id: 5, title: "Bank Details", short: "Bank" },
-  { id: 6, title: "Documents", short: "Documents" },
+  { id: 1, title: "Personal Information", icon: User, subtitle: "Let's get to know you" },
+  { id: 2, title: "Employment Details", icon: Briefcase, subtitle: "Where you work" },
+  { id: 3, title: "Loan Information", icon: Wallet, subtitle: "Tell us what you need" },
+  { id: 4, title: "Next of Kin", icon: Users, subtitle: "Emergency contact" },
+  { id: 5, title: "Bank Details", icon: Building2, subtitle: "Where to send funds" },
+  { id: 6, title: "Documents", icon: FileText, subtitle: "Verify your identity" },
 ] as const;
 
 const emptyDraft: LoanApplicationDraft = {
@@ -72,12 +76,8 @@ function ApplyPage() {
       req("loanAmount"); req("loanPurpose"); req("loanTerm"); req("repaymentSource");
       if (form.loanAmount && Number(form.loanAmount) <= 0) e.loanAmount = "Enter a valid amount";
     }
-    if (s === 4) {
-      req("kinFullName"); req("kinRelationship"); req("kinPhone"); req("kinAddress");
-    }
-    if (s === 5) {
-      req("bankName"); req("accountNumber"); req("accountName");
-    }
+    if (s === 4) { req("kinFullName"); req("kinRelationship"); req("kinPhone"); req("kinAddress"); }
+    if (s === 5) { req("bankName"); req("accountNumber"); req("accountName"); }
     if (s === 6) {
       if (!files.passportPhoto) e.passportPhoto = "Passport photograph is required";
       if (!files.idDocument) e.idDocument = "Government ID is required";
@@ -100,77 +100,117 @@ function ApplyPage() {
     }
   }
 
-  function next() {
-    if (validateStep(step)) setStep((s) => Math.min(6, s + 1));
-  }
+  function next() { if (validateStep(step)) setStep((s) => Math.min(6, s + 1)); }
   function prev() { setStep((s) => Math.max(1, s - 1)); }
 
   const progress = (step / STEPS.length) * 100;
+  const eligibility = useMemo(() => computeEligibility(form), [form]);
+  const monthly = useMemo(() => estimateMonthly(form.loanAmount, form.loanTerm), [form.loanAmount, form.loanTerm]);
+  const CurrentIcon = STEPS[step - 1].icon;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground font-bold">M</div>
-            <span className="text-lg font-bold tracking-tight">Meridian Finance</span>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
+      <div className="pointer-events-none fixed -top-32 -right-32 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+      <div className="pointer-events-none fixed top-1/2 -left-32 -z-10 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
+
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="grid h-10 w-10 place-items-center rounded-xl gradient-brand font-extrabold text-primary-foreground shadow-glow">M</div>
+            <div>
+              <div className="text-sm font-extrabold leading-none">Meridian</div>
+              <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Application</div>
+            </div>
           </Link>
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Cancel</Link>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="hidden items-center gap-1.5 sm:inline-flex"><Lock className="h-3.5 w-3.5 text-accent" /> Secure session</span>
+            <Link to="/" className="rounded-xl border border-border bg-card px-3 py-1.5 font-semibold text-foreground hover:bg-muted">Cancel</Link>
+          </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
-        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-          {/* Sidebar steps */}
-          <aside>
-            <div className="rounded-xl border border-border bg-card p-5">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Loan Application</h2>
-              <p className="mt-1 text-sm text-foreground">Step {step} of {STEPS.length}</p>
-              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <div className="h-full bg-[color:var(--gold)] transition-all" style={{ width: `${progress}%` }} />
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
+        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)_280px]">
+          {/* Sidebar timeline */}
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <div className="glass rounded-3xl p-6 shadow-elegant">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Progress</div>
+                  <div className="mt-1 text-sm font-bold">Step {step} of {STEPS.length}</div>
+                </div>
+                <ProgressRing percent={progress} />
               </div>
-              <ol className="mt-6 space-y-3">
+
+              <ol className="relative mt-8 space-y-1">
+                <div className="pointer-events-none absolute left-[19px] top-2 bottom-2 w-px bg-border" aria-hidden />
                 {STEPS.map((s) => {
                   const done = s.id < step;
                   const active = s.id === step;
+                  const Icon = s.icon;
                   return (
-                    <li key={s.id} className="flex items-start gap-3">
-                      <div className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${
-                        done ? "bg-[color:var(--success)] text-white"
-                          : active ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      }`}>
-                        {done ? <Check className="h-3.5 w-3.5" /> : s.id}
-                      </div>
-                      <div className="min-w-0">
-                        <div className={`text-sm font-medium ${active ? "text-foreground" : "text-muted-foreground"}`}>{s.title}</div>
-                      </div>
+                    <li key={s.id}>
+                      <button
+                        onClick={() => done && setStep(s.id)}
+                        disabled={!done && !active}
+                        className={`group relative flex w-full items-start gap-3 rounded-2xl p-2 text-left transition ${
+                          active ? "bg-primary/5" : done ? "hover:bg-muted/60 cursor-pointer" : ""
+                        }`}
+                      >
+                        <div className={`relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 transition ${
+                          done ? "border-accent bg-accent text-white"
+                            : active ? "border-primary gradient-brand text-primary-foreground shadow-glow"
+                            : "border-border bg-card text-muted-foreground"
+                        }`}>
+                          {done ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0 pt-1">
+                          <div className={`text-sm font-bold ${active || done ? "text-foreground" : "text-muted-foreground"}`}>{s.title}</div>
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+                            {done ? "Completed" : active ? s.subtitle : `Step ${s.id}`}
+                          </div>
+                        </div>
+                      </button>
                     </li>
                   );
                 })}
               </ol>
             </div>
+
+            <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-xs">
+              <div className="flex items-center gap-2 font-bold text-foreground">
+                <ShieldCheck className="h-4 w-4 text-accent" /> Auto-saved
+              </div>
+              <p className="mt-1.5 text-muted-foreground">Your progress is saved as you type.</p>
+            </div>
           </aside>
 
           {/* Form panel */}
           <main>
-            <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{STEPS[step - 1].title}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">All fields marked * are required.</p>
+            <div className="rounded-3xl border border-border bg-card/80 p-6 shadow-elegant backdrop-blur-xl sm:p-10">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-2xl gradient-brand text-primary-foreground shadow-glow">
+                  <CurrentIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-primary">{STEPS[step - 1].subtitle}</div>
+                  <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{STEPS[step - 1].title}</h1>
+                </div>
+              </div>
 
               <div className="mt-8 space-y-5">
                 {step === 1 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="First name *" error={errors.firstName}><Input value={form.firstName} onChange={set("firstName")} /></Field>
                     <Field label="Last name *" error={errors.lastName}><Input value={form.lastName} onChange={set("lastName")} /></Field>
-                    <Field label="Middle name" error={errors.middleName}><Input value={form.middleName ?? ""} onChange={set("middleName")} /></Field>
+                    <Field label="Middle name"><Input value={form.middleName ?? ""} onChange={set("middleName")} /></Field>
                     <Field label="Email *" error={errors.email}><Input type="email" value={form.email} onChange={set("email")} /></Field>
                     <Field label="Phone *" error={errors.phone}><Input value={form.phone} onChange={set("phone")} /></Field>
                     <Field label="Date of birth *" error={errors.dateOfBirth}><Input type="date" value={form.dateOfBirth} onChange={set("dateOfBirth")} /></Field>
                     <Field label="Gender *" error={errors.gender}>
                       <Select value={form.gender} onChange={set("gender")} options={["Male","Female","Other","Prefer not to say"]} />
                     </Field>
-                    <Field label="Marital status" error={errors.maritalStatus}>
+                    <Field label="Marital status">
                       <Select value={form.maritalStatus} onChange={set("maritalStatus")} options={["Single","Married","Divorced","Widowed"]} />
                     </Field>
                     <Field label="Residential address *" error={errors.address} full><Input value={form.address} onChange={set("address")} /></Field>
@@ -189,8 +229,8 @@ function ApplyPage() {
                     <Field label="Monthly income *" error={errors.monthlyIncome}><Input type="number" value={form.monthlyIncome} onChange={set("monthlyIncome")} prefix="$" /></Field>
                     <Field label="Employer name" error={errors.employerName}><Input value={form.employerName} onChange={set("employerName")} /></Field>
                     <Field label="Job title" error={errors.jobTitle}><Input value={form.jobTitle} onChange={set("jobTitle")} /></Field>
-                    <Field label="Years employed" error={errors.yearsEmployed}><Input type="number" value={form.yearsEmployed} onChange={set("yearsEmployed")} /></Field>
-                    <Field label="Work address" error={errors.workAddress} full><Input value={form.workAddress} onChange={set("workAddress")} /></Field>
+                    <Field label="Years employed"><Input type="number" value={form.yearsEmployed} onChange={set("yearsEmployed")} /></Field>
+                    <Field label="Work address" full><Input value={form.workAddress} onChange={set("workAddress")} /></Field>
                   </div>
                 )}
 
@@ -226,7 +266,7 @@ function ApplyPage() {
                     <Field label="Bank name *" error={errors.bankName}><Input value={form.bankName} onChange={set("bankName")} /></Field>
                     <Field label="Account number *" error={errors.accountNumber}><Input value={form.accountNumber} onChange={set("accountNumber")} /></Field>
                     <Field label="Account name *" error={errors.accountName} full><Input value={form.accountName} onChange={set("accountName")} /></Field>
-                    <Field label="BVN / Tax ID" error={errors.bvn} full><Input value={form.bvn} onChange={set("bvn")} /></Field>
+                    <Field label="BVN / Tax ID" full><Input value={form.bvn} onChange={set("bvn")} /></Field>
                   </div>
                 )}
 
@@ -239,51 +279,159 @@ function ApplyPage() {
                       file={files.idDocument} error={errors.idDocument}
                       onChange={(f) => setFiles((p) => ({ ...p, idDocument: f }))} />
                     <FileField label="Proof of income"
-                      file={files.proofOfIncome} error={errors.proofOfIncome}
+                      file={files.proofOfIncome}
                       onChange={(f) => setFiles((p) => ({ ...p, proofOfIncome: f }))} />
                     <FileField label="Proof of address"
-                      file={files.proofOfAddress} error={errors.proofOfAddress}
+                      file={files.proofOfAddress}
                       onChange={(f) => setFiles((p) => ({ ...p, proofOfAddress: f }))} />
                   </div>
                 )}
               </div>
 
               {serverError && (
-                <div className="mt-6 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{serverError}</div>
+                <div className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{serverError}</div>
               )}
 
-              <div className="mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-10 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <button onClick={prev} disabled={step === 1 || submitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted disabled:opacity-40">
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background px-6 py-3 text-sm font-bold text-foreground transition hover:bg-muted disabled:opacity-40">
                   <ArrowLeft className="h-4 w-4" /> Previous
                 </button>
                 {step < 6 ? (
                   <button onClick={next}
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
-                    Continue <ArrowRight className="h-4 w-4" />
+                    className="group inline-flex items-center justify-center gap-2 rounded-2xl gradient-brand px-7 py-3 text-sm font-bold text-primary-foreground shadow-glow transition hover:scale-[1.02]">
+                    Continue <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                   </button>
                 ) : (
                   <button onClick={handleSubmit} disabled={submitting}
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-[color:var(--gold)] px-6 py-2.5 text-sm font-semibold text-primary transition hover:brightness-110 disabled:opacity-60">
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent px-7 py-3 text-sm font-bold text-accent-foreground shadow-glow transition hover:scale-[1.02] disabled:opacity-60">
                     {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : <>Submit application <Check className="h-4 w-4" /></>}
                   </button>
                 )}
               </div>
             </div>
           </main>
+
+          {/* Dashboard right rail */}
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-2xl gradient-hero p-5 text-primary-foreground shadow-elegant">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Eligibility</span>
+                <Sparkles className="h-4 w-4 text-white/80" />
+              </div>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold">{eligibility.score}</span>
+                <span className="text-sm text-white/70">/ 100</span>
+              </div>
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+                <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${eligibility.score}%` }} />
+              </div>
+              <p className="mt-3 text-xs text-white/80">{eligibility.label}</p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Est. monthly</span>
+                <TrendingUp className="h-4 w-4 text-accent" />
+              </div>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-3xl font-extrabold gradient-text">${monthly.payment.toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground">/ mo</span>
+              </div>
+              <div className="mt-4 space-y-2 text-xs">
+                <KV label="Loan amount" value={form.loanAmount ? `$${Number(form.loanAmount).toLocaleString()}` : "—"} />
+                <KV label="Term" value={form.loanTerm ? `${form.loanTerm} mo` : "—"} />
+                <KV label="APR (est.)" value={`${monthly.apr}%`} />
+                <KV label="Total payable" value={form.loanAmount && form.loanTerm ? `$${(monthly.payment * Number(form.loanTerm)).toLocaleString()}` : "—"} last />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-sm font-bold">
+                <ShieldCheck className="h-4 w-4 text-accent" /> Trust & safety
+              </div>
+              <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
+                <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> 256-bit bank-grade SSL</li>
+                <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> CBN regulated lender</li>
+                <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-accent" /> Never sold to third parties</li>
+              </ul>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
   );
 }
 
-// ---- Field primitives ----
+/* ----------------- Primitives ----------------- */
+
+function ProgressRing({ percent }: { percent: number }) {
+  const r = 22, c = 2 * Math.PI * r;
+  const offset = c - (percent / 100) * c;
+  return (
+    <div className="relative h-14 w-14">
+      <svg viewBox="0 0 56 56" className="h-14 w-14 -rotate-90">
+        <circle cx="28" cy="28" r={r} stroke="currentColor" strokeWidth="4" fill="none" className="text-muted" />
+        <circle cx="28" cy="28" r={r} stroke="url(#ringGrad)" strokeWidth="4" fill="none"
+          strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-500" />
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="var(--primary)" />
+            <stop offset="100%" stopColor="var(--accent)" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-[11px] font-extrabold">{Math.round(percent)}%</div>
+    </div>
+  );
+}
+
+function KV({ label, value, last }: { label: string; value: string; last?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between ${last ? "" : "border-b border-border pb-2"}`}>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-bold text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function computeEligibility(f: LoanApplicationDraft) {
+  let score = 35;
+  if (f.firstName && f.lastName) score += 8;
+  if (f.email && /^\S+@\S+\.\S+$/.test(f.email)) score += 5;
+  if (f.phone && f.phone.length > 7) score += 5;
+  if (f.address && f.city) score += 7;
+  if (f.employmentStatus === "employed" || f.employmentStatus === "self-employed") score += 12;
+  if (Number(f.monthlyIncome) > 0) score += 10;
+  if (f.bankName && f.accountNumber) score += 10;
+  if (f.kinFullName) score += 4;
+  if (Number(f.loanAmount) > 0 && Number(f.monthlyIncome) > 0) {
+    const ratio = Number(f.loanAmount) / (Number(f.monthlyIncome) * 12);
+    if (ratio < 1) score += 4;
+  }
+  score = Math.min(98, score);
+  const label = score >= 80 ? "Excellent — high approval likelihood"
+    : score >= 60 ? "Good — likely to qualify"
+    : score >= 40 ? "Fair — keep going to improve"
+    : "Just getting started";
+  return { score, label };
+}
+
+function estimateMonthly(amount: string, term: string) {
+  const P = Number(amount) || 0;
+  const n = Number(term) || 12;
+  const apr = 12.5;
+  const r = apr / 100 / 12;
+  const payment = P > 0 && n > 0 ? Math.round((P * r) / (1 - Math.pow(1 + r, -n))) : 0;
+  return { payment, apr };
+}
+
 function Field({ label, error, full, children }: { label: string; error?: string; full?: boolean; children: React.ReactNode }) {
   return (
     <div className={full ? "sm:col-span-2" : ""}>
-      <label className="mb-1.5 block text-sm font-medium text-foreground">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</label>
       {children}
-      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {error && <p className="mt-1.5 text-xs font-semibold text-destructive">{error}</p>}
     </div>
   );
 }
@@ -293,9 +441,9 @@ function Input({ value, onChange, type = "text", prefix }: {
 }) {
   return (
     <div className="relative flex items-center">
-      {prefix && <span className="absolute left-3 text-sm text-muted-foreground">{prefix}</span>}
+      {prefix && <span className="pointer-events-none absolute left-3.5 text-sm font-bold text-muted-foreground">{prefix}</span>}
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-md border border-input bg-background py-2.5 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 ${prefix ? "pl-7 pr-3" : "px-3"}`} />
+        className={`w-full rounded-xl border border-input bg-background py-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15 ${prefix ? "pl-8 pr-3.5" : "px-3.5"}`} />
     </div>
   );
 }
@@ -303,14 +451,14 @@ function Input({ value, onChange, type = "text", prefix }: {
 function Textarea({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} placeholder={placeholder}
-      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20" />
+      className="w-full rounded-xl border border-input bg-background px-3.5 py-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15" />
   );
 }
 
 function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20">
+      className="w-full rounded-xl border border-input bg-background px-3.5 py-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15">
       <option value="">Select…</option>
       {options.map((o) => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
     </select>
@@ -323,33 +471,35 @@ function FileField({ label, file, onChange, error, accept }: {
   const isImage = file && file.type.startsWith("image/");
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-foreground">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</label>
       {!file ? (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-input bg-background px-4 py-8 text-center transition hover:border-primary/50 hover:bg-muted/50">
-          <Upload className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm font-medium">Click to upload</span>
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-input bg-gradient-to-b from-background to-muted/40 px-4 py-10 text-center transition hover:border-primary hover:bg-primary/5">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl gradient-brand text-primary-foreground shadow-glow">
+            <Upload className="h-5 w-5" />
+          </div>
+          <span className="mt-2 text-sm font-bold">Drop file or click to upload</span>
           <span className="text-xs text-muted-foreground">PNG, JPG or PDF up to 10MB</span>
           <input type="file" accept={accept ?? "image/*,application/pdf"} className="hidden"
             onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
         </label>
       ) : (
-        <div className="flex items-center gap-3 rounded-md border border-input bg-background p-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-3">
           {isImage ? (
-            <img src={URL.createObjectURL(file)} alt="preview" className="h-14 w-14 rounded object-cover" />
+            <img src={URL.createObjectURL(file)} alt="preview" className="h-14 w-14 rounded-xl object-cover" />
           ) : (
-            <div className="grid h-14 w-14 place-items-center rounded bg-muted text-xs font-semibold text-muted-foreground">PDF</div>
+            <div className="grid h-14 w-14 place-items-center rounded-xl gradient-brand text-xs font-bold text-primary-foreground">PDF</div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{file.name}</div>
-            <div className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</div>
+            <div className="truncate text-sm font-bold">{file.name}</div>
+            <div className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB · Uploaded</div>
           </div>
           <button type="button" onClick={() => onChange(null)}
-            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground">
+            className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive">
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
-      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {error && <p className="mt-1.5 text-xs font-semibold text-destructive">{error}</p>}
     </div>
   );
 }
