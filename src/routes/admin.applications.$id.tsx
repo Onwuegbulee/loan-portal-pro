@@ -34,36 +34,37 @@ function ApplicationDetail() {
       </button>
 
       {/* Header card */}
-      <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="bg-primary px-6 py-6 text-primary-foreground sm:px-8">
+      <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card shadow-elegant">
+        <div className="relative overflow-hidden gradient-hero px-6 py-8 text-primary-foreground sm:px-10">
+          <div className="pointer-events-none absolute -top-32 -right-32 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               {app.passportPhoto ? (
                 <img src={app.passportPhoto} alt="Passport"
-                  className="h-20 w-20 shrink-0 rounded-lg object-cover ring-2 ring-white/30" />
+                  className="h-24 w-24 shrink-0 rounded-2xl object-cover ring-4 ring-white/30 shadow-glow" />
               ) : (
-                <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-white/10 text-2xl font-bold">
+                <div className="grid h-24 w-24 shrink-0 place-items-center rounded-2xl bg-white/15 text-2xl font-extrabold backdrop-blur">
                   {app.firstName?.[0]}{app.lastName?.[0]}
                 </div>
               )}
               <div className="min-w-0">
-                <h1 className="truncate text-2xl font-bold">{app.firstName} {app.middleName} {app.lastName}</h1>
-                <div className="mt-1 text-sm text-white/70">{app.email} · {app.phone}</div>
-                <div className="mt-2 font-mono text-xs text-white/50">{app.id}</div>
+                <h1 className="truncate text-3xl font-extrabold tracking-tight">{app.firstName} {app.middleName} {app.lastName}</h1>
+                <div className="mt-1.5 text-sm text-white/80">{app.email} · {app.phone}</div>
+                <div className="mt-2 inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 font-mono text-[10px] text-white/70 backdrop-blur">{app.id}</div>
               </div>
             </div>
             <StatusBadge status={app.status} />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 border-b border-border bg-muted/30 px-6 py-5 sm:grid-cols-4 sm:px-8">
+        <div className="grid grid-cols-2 gap-4 border-b border-border bg-muted/30 px-6 py-5 sm:grid-cols-4 sm:px-10">
           <Stat label="Loan amount" value={`$${Number(app.loanAmount || 0).toLocaleString()}`} />
           <Stat label="Term" value={`${app.loanTerm || "—"} months`} />
           <Stat label="Purpose" value={app.loanPurpose || "—"} />
           <Stat label="Submitted" value={new Date(app.createdAt).toLocaleDateString()} />
         </div>
 
-        <div className="space-y-8 p-6 sm:p-8">
+        <div className="space-y-10 p-6 sm:p-10">
           <Section title="Personal Information">
             <DL items={[
               ["First name", app.firstName],
@@ -136,8 +137,8 @@ function ApplicationDetail() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 font-semibold">{value}</div>
+      <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="mt-1.5 text-lg font-extrabold tracking-tight">{value}</div>
     </div>
   );
 }
@@ -145,8 +146,11 @@ function Stat({ label, value }: { label: string; value: string }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="border-l-4 border-[color:var(--gold)] pl-3 text-lg font-bold">{title}</h2>
-      <div className="mt-4">{children}</div>
+      <h2 className="relative pl-4 text-xl font-extrabold tracking-tight">
+        <span className="absolute left-0 top-1.5 h-5 w-1 rounded-full gradient-brand" />
+        {title}
+      </h2>
+      <div className="mt-5 rounded-2xl border border-border bg-muted/20 p-5">{children}</div>
     </section>
   );
 }
@@ -203,10 +207,10 @@ function DocumentTile({ label, url, name }: { label: string; url?: string; name?
 
 function StatusBadge({ status }: { status: LoanApplication["status"] }) {
   const map: Record<LoanApplication["status"], string> = {
-    pending: "bg-[color:var(--gold)]/20 text-[color:var(--gold)]",
-    approved: "bg-[color:var(--success)]/20 text-[color:var(--success)]",
-    rejected: "bg-destructive/20 text-destructive-foreground",
+    pending: "bg-amber-400/20 text-amber-100",
+    approved: "bg-accent/30 text-white",
+    rejected: "bg-destructive/30 text-white",
     review: "bg-white/20 text-white",
   };
-  return <span className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wider ${map[status]}`}>{status}</span>;
+  return <span className={`shrink-0 rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur ${map[status]}`}>{status}</span>;
 }
