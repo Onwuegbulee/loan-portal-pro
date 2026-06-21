@@ -157,7 +157,7 @@ function Index() {
             <div className="grid h-7 w-7 place-items-center rounded-lg gradient-brand text-primary-foreground font-bold text-xs">M</div>
             © {new Date().getFullYear()} Meridian Finance. All rights reserved.
           </div>
-          <Link to="/admin/login" className="hover:text-foreground">Admin portal</Link>
+          <span />
         </div>
       </footer>
     </div>
@@ -178,7 +178,7 @@ function SiteHeader() {
           <a href="#" className="hover:text-foreground">About</a>
         </nav>
         <div className="flex items-center gap-2">
-          <Link to="/admin/login" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground sm:inline">Admin</Link>
+          
           <Link to="/apply" className="inline-flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-glow transition hover:scale-105">
             Apply <ArrowRight className="h-3.5 w-3.5" />
           </Link>

@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   ArrowLeft, ArrowRight, Check, Loader2, Upload, X,
-  User, Briefcase, Wallet, Users, Building2, FileText,
+  User, Briefcase, Wallet, Users, Building2, FileText, Camera, Image as ImageIcon, RefreshCw,
   ShieldCheck, Sparkles, TrendingUp, Lock,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -19,12 +19,13 @@ export const Route = createFileRoute("/apply")({
 });
 
 const STEPS = [
-  { id: 1, title: "Personal Information", icon: User, subtitle: "Let's get to know you" },
-  { id: 2, title: "Employment Details", icon: Briefcase, subtitle: "Where you work" },
-  { id: 3, title: "Loan Information", icon: Wallet, subtitle: "Tell us what you need" },
-  { id: 4, title: "Next of Kin", icon: Users, subtitle: "Emergency contact" },
-  { id: 5, title: "Bank Details", icon: Building2, subtitle: "Where to send funds" },
-  { id: 6, title: "Documents", icon: FileText, subtitle: "Verify your identity" },
+  { id: 1, title: "Passport Photograph", icon: Camera, subtitle: "Take or upload your photo" },
+  { id: 2, title: "Personal Information", icon: User, subtitle: "Let's get to know you" },
+  { id: 3, title: "Employment Details", icon: Briefcase, subtitle: "Where you work" },
+  { id: 4, title: "Loan Information", icon: Wallet, subtitle: "Tell us what you need" },
+  { id: 5, title: "Next of Kin", icon: Users, subtitle: "Emergency contact" },
+  { id: 6, title: "Bank Details", icon: Building2, subtitle: "Where to send funds" },
+  { id: 7, title: "Supporting Documents", icon: FileText, subtitle: "Verify your identity" },
 ] as const;
 
 const emptyDraft: LoanApplicationDraft = {
@@ -60,26 +61,28 @@ function ApplyPage() {
       if (!String(form[k] ?? "").trim()) e[k] = msg;
     };
     if (s === 1) {
+      if (!files.passportPhoto) e.passportPhoto = "Passport photograph is required to continue";
+    }
+    if (s === 2) {
       req("firstName"); req("lastName"); req("email"); req("phone");
       req("dateOfBirth"); req("gender"); req("address"); req("city");
       req("state"); req("nationality");
       if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Invalid email";
       if (form.phone && form.phone.replace(/\D/g, "").length < 7) e.phone = "Invalid phone";
     }
-    if (s === 2) {
+    if (s === 3) {
       req("employmentStatus"); req("monthlyIncome");
       if (form.employmentStatus === "employed" || form.employmentStatus === "self-employed") {
         req("employerName"); req("jobTitle");
       }
     }
-    if (s === 3) {
+    if (s === 4) {
       req("loanAmount"); req("loanPurpose"); req("loanTerm"); req("repaymentSource");
       if (form.loanAmount && Number(form.loanAmount) <= 0) e.loanAmount = "Enter a valid amount";
     }
-    if (s === 4) { req("kinFullName"); req("kinRelationship"); req("kinPhone"); req("kinAddress"); }
-    if (s === 5) { req("bankName"); req("accountNumber"); req("accountName"); }
-    if (s === 6) {
-      if (!files.passportPhoto) e.passportPhoto = "Passport photograph is required";
+    if (s === 5) { req("kinFullName"); req("kinRelationship"); req("kinPhone"); req("kinAddress"); }
+    if (s === 6) { req("bankName"); req("accountNumber"); req("accountName"); }
+    if (s === 7) {
       if (!files.idDocument) e.idDocument = "Government ID is required";
     }
     setErrors(e);
@@ -87,7 +90,8 @@ function ApplyPage() {
   }
 
   async function handleSubmit() {
-    if (!validateStep(6)) return;
+    if (!validateStep(7)) return;
+    if (!files.passportPhoto) { setStep(1); setErrors({ passportPhoto: "Passport photograph is required" }); return; }
     setServerError(null);
     setSubmitting(true);
     try {
@@ -100,7 +104,7 @@ function ApplyPage() {
     }
   }
 
-  function next() { if (validateStep(step)) setStep((s) => Math.min(6, s + 1)); }
+  function next() { if (validateStep(step)) setStep((s) => Math.min(STEPS.length, s + 1)); }
   function prev() { setStep((s) => Math.max(1, s - 1)); }
 
   const progress = (step / STEPS.length) * 100;
@@ -200,6 +204,14 @@ function ApplyPage() {
 
               <div className="mt-8 space-y-5">
                 {step === 1 && (
+                  <PassportStep
+                    file={files.passportPhoto}
+                    error={errors.passportPhoto}
+                    onChange={(f) => setFiles((p) => ({ ...p, passportPhoto: f }))}
+                  />
+                )}
+
+                {step === 2 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="First name *" error={errors.firstName}><Input value={form.firstName} onChange={set("firstName")} /></Field>
                     <Field label="Last name *" error={errors.lastName}><Input value={form.lastName} onChange={set("lastName")} /></Field>
@@ -220,7 +232,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 2 && (
+                {step === 3 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Employment status *" error={errors.employmentStatus}>
                       <Select value={form.employmentStatus} onChange={set("employmentStatus")}
@@ -234,7 +246,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 3 && (
+                {step === 4 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Loan amount *" error={errors.loanAmount}><Input type="number" value={form.loanAmount} onChange={set("loanAmount")} prefix="$" /></Field>
                     <Field label="Loan term (months) *" error={errors.loanTerm}>
@@ -250,7 +262,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 4 && (
+                {step === 5 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Full name *" error={errors.kinFullName}><Input value={form.kinFullName} onChange={set("kinFullName")} /></Field>
                     <Field label="Relationship *" error={errors.kinRelationship}>
@@ -261,7 +273,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 5 && (
+                {step === 6 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Bank name *" error={errors.bankName}><Input value={form.bankName} onChange={set("bankName")} /></Field>
                     <Field label="Account number *" error={errors.accountNumber}><Input value={form.accountNumber} onChange={set("accountNumber")} /></Field>
@@ -270,18 +282,15 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 6 && (
+                {step === 7 && (
                   <div className="grid gap-5 sm:grid-cols-2">
-                    <FileField label="Passport photograph *" accept="image/*"
-                      file={files.passportPhoto} error={errors.passportPhoto}
-                      onChange={(f) => setFiles((p) => ({ ...p, passportPhoto: f }))} />
                     <FileField label="Government-issued ID *"
                       file={files.idDocument} error={errors.idDocument}
                       onChange={(f) => setFiles((p) => ({ ...p, idDocument: f }))} />
                     <FileField label="Proof of income"
                       file={files.proofOfIncome}
                       onChange={(f) => setFiles((p) => ({ ...p, proofOfIncome: f }))} />
-                    <FileField label="Proof of address"
+                    <FileField label="Proof of address" 
                       file={files.proofOfAddress}
                       onChange={(f) => setFiles((p) => ({ ...p, proofOfAddress: f }))} />
                   </div>
@@ -297,7 +306,7 @@ function ApplyPage() {
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background px-6 py-3 text-sm font-bold text-foreground transition hover:bg-muted disabled:opacity-40">
                   <ArrowLeft className="h-4 w-4" /> Previous
                 </button>
-                {step < 6 ? (
+                {step < STEPS.length ? (
                   <button onClick={next}
                     className="group inline-flex items-center justify-center gap-2 rounded-2xl gradient-brand px-7 py-3 text-sm font-bold text-primary-foreground shadow-glow transition hover:scale-[1.02]">
                     Continue <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -500,6 +509,131 @@ function FileField({ label, file, onChange, error, accept }: {
         </div>
       )}
       {error && <p className="mt-1.5 text-xs font-semibold text-destructive">{error}</p>}
+    </div>
+  );
+}
+function PassportStep({ file, error, onChange }: { file: File | null; error?: string; onChange: (f: File | null) => void }) {
+  const [mode, setMode] = useState<"idle" | "camera">("idle");
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [camError, setCamError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+
+  useEffect(() => {
+    if (mode !== "camera") return;
+    let active = true;
+    (async () => {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+        if (!active) { s.getTracks().forEach((t) => t.stop()); return; }
+        setStream(s);
+        if (videoRef.current) { videoRef.current.srcObject = s; await videoRef.current.play().catch(() => {}); }
+      } catch (e) {
+        setCamError(e instanceof Error ? e.message : "Camera unavailable");
+        setMode("idle");
+      }
+    })();
+    return () => { active = false; };
+  }, [mode]);
+
+  useEffect(() => () => { stream?.getTracks().forEach((t) => t.stop()); }, [stream]);
+
+  function stopCamera() {
+    stream?.getTracks().forEach((t) => t.stop());
+    setStream(null);
+    setMode("idle");
+  }
+
+  function capture() {
+    const v = videoRef.current;
+    if (!v) return;
+    const size = Math.min(v.videoWidth, v.videoHeight);
+    const sx = (v.videoWidth - size) / 2, sy = (v.videoHeight - size) / 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = 720; canvas.height = 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(v, sx, sy, size, size, 0, 0, 720, 720);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const f = new File([blob], `passport-${Date.now()}.jpg`, { type: "image/jpeg" });
+      onChange(f);
+      stopCamera();
+    }, "image/jpeg", 0.92);
+  }
+
+  if (previewUrl) {
+    return (
+      <div className="flex flex-col items-center gap-5 rounded-3xl border border-accent/30 bg-accent/5 p-6 sm:p-10">
+        <div className="relative">
+          <img src={previewUrl} alt="Passport preview" className="h-48 w-48 rounded-2xl object-cover shadow-elegant ring-4 ring-white" />
+          <div className="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-foreground shadow-glow">
+            <Check className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="text-center">
+          <div className="text-lg font-bold">Looking great!</div>
+          <p className="mt-1 text-sm text-muted-foreground">{file?.name} · {(file ? file.size / 1024 : 0).toFixed(0)} KB</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button type="button" onClick={() => onChange(null)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold hover:bg-muted">
+            <RefreshCw className="h-4 w-4" /> Replace photo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "camera") {
+    return (
+      <div className="space-y-4">
+        <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-3xl bg-black shadow-elegant">
+          <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
+          <div className="pointer-events-none absolute inset-6 rounded-full border-2 border-white/60" />
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button type="button" onClick={capture}
+            className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow hover:scale-[1.02]">
+            <Camera className="h-4 w-4" /> Capture photo
+          </button>
+          <button type="button" onClick={stopCamera}
+            className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold hover:bg-muted">
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
+        Upload a clear, recent passport-style photo. Face centered, plain background, no glasses or hat.
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <button type="button" onClick={() => { setCamError(null); setMode("camera"); }}
+          className="group flex flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-input bg-gradient-to-b from-background to-muted/40 px-6 py-10 text-center transition hover:border-primary hover:bg-primary/5">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl gradient-brand text-primary-foreground shadow-glow transition group-hover:scale-110">
+            <Camera className="h-6 w-6" />
+          </div>
+          <div className="text-sm font-bold">Take a photo</div>
+          <div className="text-xs text-muted-foreground">Use your device camera</div>
+        </button>
+        <label className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-input bg-gradient-to-b from-background to-muted/40 px-6 py-10 text-center transition hover:border-primary hover:bg-primary/5">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-foreground/90 text-background shadow-glow transition group-hover:scale-110">
+            <ImageIcon className="h-6 w-6" />
+          </div>
+          <div className="text-sm font-bold">Upload from device</div>
+          <div className="text-xs text-muted-foreground">JPG or PNG up to 10MB</div>
+          <input type="file" accept="image/*" className="hidden"
+            onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
+        </label>
+      </div>
+      {camError && <p className="text-xs font-semibold text-destructive">{camError}</p>}
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
     </div>
   );
 }

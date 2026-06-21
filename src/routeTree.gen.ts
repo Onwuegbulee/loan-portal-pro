@@ -14,7 +14,6 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminApplicationsIdRouteImport } from './routes/admin.applications.$id'
 
@@ -43,11 +42,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
   id: '/applications',
   path: '/applications',
@@ -65,7 +59,6 @@ export interface FileRoutesByFullPath {
   '/apply': typeof ApplyRoute
   '/success': typeof SuccessRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
-  '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/applications/$id': typeof AdminApplicationsIdRoute
 }
@@ -74,7 +67,6 @@ export interface FileRoutesByTo {
   '/apply': typeof ApplyRoute
   '/success': typeof SuccessRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
-  '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
   '/admin/applications/$id': typeof AdminApplicationsIdRoute
 }
@@ -85,7 +77,6 @@ export interface FileRoutesById {
   '/apply': typeof ApplyRoute
   '/success': typeof SuccessRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
-  '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/applications/$id': typeof AdminApplicationsIdRoute
 }
@@ -97,7 +88,6 @@ export interface FileRouteTypes {
     | '/apply'
     | '/success'
     | '/admin/applications'
-    | '/admin/login'
     | '/admin/'
     | '/admin/applications/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -106,7 +96,6 @@ export interface FileRouteTypes {
     | '/apply'
     | '/success'
     | '/admin/applications'
-    | '/admin/login'
     | '/admin'
     | '/admin/applications/$id'
   id:
@@ -116,7 +105,6 @@ export interface FileRouteTypes {
     | '/apply'
     | '/success'
     | '/admin/applications'
-    | '/admin/login'
     | '/admin/'
     | '/admin/applications/$id'
   fileRoutesById: FileRoutesById
@@ -165,13 +153,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/login': {
-      id: '/admin/login'
-      path: '/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminLoginRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/applications': {
       id: '/admin/applications'
       path: '/applications'
@@ -202,13 +183,11 @@ const AdminApplicationsRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminApplicationsRoute: typeof AdminApplicationsRouteWithChildren
-  AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminApplicationsRoute: AdminApplicationsRouteWithChildren,
-  AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
