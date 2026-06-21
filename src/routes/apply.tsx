@@ -512,3 +512,128 @@ function FileField({ label, file, onChange, error, accept }: {
     </div>
   );
 }
+function PassportStep({ file, error, onChange }: { file: File | null; error?: string; onChange: (f: File | null) => void }) {
+  const [mode, setMode] = useState<"idle" | "camera">("idle");
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [camError, setCamError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+
+  useEffect(() => {
+    if (mode !== "camera") return;
+    let active = true;
+    (async () => {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+        if (!active) { s.getTracks().forEach((t) => t.stop()); return; }
+        setStream(s);
+        if (videoRef.current) { videoRef.current.srcObject = s; await videoRef.current.play().catch(() => {}); }
+      } catch (e) {
+        setCamError(e instanceof Error ? e.message : "Camera unavailable");
+        setMode("idle");
+      }
+    })();
+    return () => { active = false; };
+  }, [mode]);
+
+  useEffect(() => () => { stream?.getTracks().forEach((t) => t.stop()); }, [stream]);
+
+  function stopCamera() {
+    stream?.getTracks().forEach((t) => t.stop());
+    setStream(null);
+    setMode("idle");
+  }
+
+  function capture() {
+    const v = videoRef.current;
+    if (!v) return;
+    const size = Math.min(v.videoWidth, v.videoHeight);
+    const sx = (v.videoWidth - size) / 2, sy = (v.videoHeight - size) / 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = 720; canvas.height = 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(v, sx, sy, size, size, 0, 0, 720, 720);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const f = new File([blob], `passport-${Date.now()}.jpg`, { type: "image/jpeg" });
+      onChange(f);
+      stopCamera();
+    }, "image/jpeg", 0.92);
+  }
+
+  if (previewUrl) {
+    return (
+      <div className="flex flex-col items-center gap-5 rounded-3xl border border-accent/30 bg-accent/5 p-6 sm:p-10">
+        <div className="relative">
+          <img src={previewUrl} alt="Passport preview" className="h-48 w-48 rounded-2xl object-cover shadow-elegant ring-4 ring-white" />
+          <div className="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-foreground shadow-glow">
+            <Check className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="text-center">
+          <div className="text-lg font-bold">Looking great!</div>
+          <p className="mt-1 text-sm text-muted-foreground">{file?.name} · {(file ? file.size / 1024 : 0).toFixed(0)} KB</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button type="button" onClick={() => onChange(null)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold hover:bg-muted">
+            <RefreshCw className="h-4 w-4" /> Replace photo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "camera") {
+    return (
+      <div className="space-y-4">
+        <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-3xl bg-black shadow-elegant">
+          <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
+          <div className="pointer-events-none absolute inset-6 rounded-full border-2 border-white/60" />
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button type="button" onClick={capture}
+            className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow hover:scale-[1.02]">
+            <Camera className="h-4 w-4" /> Capture photo
+          </button>
+          <button type="button" onClick={stopCamera}
+            className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold hover:bg-muted">
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
+        Upload a clear, recent passport-style photo. Face centered, plain background, no glasses or hat.
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <button type="button" onClick={() => { setCamError(null); setMode("camera"); }}
+          className="group flex flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-input bg-gradient-to-b from-background to-muted/40 px-6 py-10 text-center transition hover:border-primary hover:bg-primary/5">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl gradient-brand text-primary-foreground shadow-glow transition group-hover:scale-110">
+            <Camera className="h-6 w-6" />
+          </div>
+          <div className="text-sm font-bold">Take a photo</div>
+          <div className="text-xs text-muted-foreground">Use your device camera</div>
+        </button>
+        <label className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-input bg-gradient-to-b from-background to-muted/40 px-6 py-10 text-center transition hover:border-primary hover:bg-primary/5">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-foreground/90 text-background shadow-glow transition group-hover:scale-110">
+            <ImageIcon className="h-6 w-6" />
+          </div>
+          <div className="text-sm font-bold">Upload from device</div>
+          <div className="text-xs text-muted-foreground">JPG or PNG up to 10MB</div>
+          <input type="file" accept="image/*" className="hidden"
+            onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
+        </label>
+      </div>
+      {camError && <p className="text-xs font-semibold text-destructive">{camError}</p>}
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
+    </div>
+  );
+}
