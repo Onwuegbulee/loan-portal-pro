@@ -204,6 +204,14 @@ function ApplyPage() {
 
               <div className="mt-8 space-y-5">
                 {step === 1 && (
+                  <PassportStep
+                    file={files.passportPhoto}
+                    error={errors.passportPhoto}
+                    onChange={(f) => setFiles((p) => ({ ...p, passportPhoto: f }))}
+                  />
+                )}
+
+                {step === 2 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="First name *" error={errors.firstName}><Input value={form.firstName} onChange={set("firstName")} /></Field>
                     <Field label="Last name *" error={errors.lastName}><Input value={form.lastName} onChange={set("lastName")} /></Field>
@@ -224,7 +232,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 2 && (
+                {step === 3 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Employment status *" error={errors.employmentStatus}>
                       <Select value={form.employmentStatus} onChange={set("employmentStatus")}
@@ -238,7 +246,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 3 && (
+                {step === 4 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Loan amount *" error={errors.loanAmount}><Input type="number" value={form.loanAmount} onChange={set("loanAmount")} prefix="$" /></Field>
                     <Field label="Loan term (months) *" error={errors.loanTerm}>
@@ -254,7 +262,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 4 && (
+                {step === 5 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Full name *" error={errors.kinFullName}><Input value={form.kinFullName} onChange={set("kinFullName")} /></Field>
                     <Field label="Relationship *" error={errors.kinRelationship}>
@@ -265,7 +273,7 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 5 && (
+                {step === 6 && (
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Bank name *" error={errors.bankName}><Input value={form.bankName} onChange={set("bankName")} /></Field>
                     <Field label="Account number *" error={errors.accountNumber}><Input value={form.accountNumber} onChange={set("accountNumber")} /></Field>
@@ -274,18 +282,15 @@ function ApplyPage() {
                   </div>
                 )}
 
-                {step === 6 && (
+                {step === 7 && (
                   <div className="grid gap-5 sm:grid-cols-2">
-                    <FileField label="Passport photograph *" accept="image/*"
-                      file={files.passportPhoto} error={errors.passportPhoto}
-                      onChange={(f) => setFiles((p) => ({ ...p, passportPhoto: f }))} />
                     <FileField label="Government-issued ID *"
                       file={files.idDocument} error={errors.idDocument}
                       onChange={(f) => setFiles((p) => ({ ...p, idDocument: f }))} />
                     <FileField label="Proof of income"
                       file={files.proofOfIncome}
                       onChange={(f) => setFiles((p) => ({ ...p, proofOfIncome: f }))} />
-                    <FileField label="Proof of address"
+                    <FileField label="Proof of address" 
                       file={files.proofOfAddress}
                       onChange={(f) => setFiles((p) => ({ ...p, proofOfAddress: f }))} />
                   </div>
@@ -301,7 +306,7 @@ function ApplyPage() {
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background px-6 py-3 text-sm font-bold text-foreground transition hover:bg-muted disabled:opacity-40">
                   <ArrowLeft className="h-4 w-4" /> Previous
                 </button>
-                {step < 6 ? (
+                {step < STEPS.length ? (
                   <button onClick={next}
                     className="group inline-flex items-center justify-center gap-2 rounded-2xl gradient-brand px-7 py-3 text-sm font-bold text-primary-foreground shadow-glow transition hover:scale-[1.02]">
                     Continue <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
