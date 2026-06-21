@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   ArrowLeft, ArrowRight, Check, Loader2, Upload, X,
-  User, Briefcase, Wallet, Users, Building2, FileText,
+  User, Briefcase, Wallet, Users, Building2, FileText, Camera, Image as ImageIcon, RefreshCw,
   ShieldCheck, Sparkles, TrendingUp, Lock,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -19,12 +19,13 @@ export const Route = createFileRoute("/apply")({
 });
 
 const STEPS = [
-  { id: 1, title: "Personal Information", icon: User, subtitle: "Let's get to know you" },
-  { id: 2, title: "Employment Details", icon: Briefcase, subtitle: "Where you work" },
-  { id: 3, title: "Loan Information", icon: Wallet, subtitle: "Tell us what you need" },
-  { id: 4, title: "Next of Kin", icon: Users, subtitle: "Emergency contact" },
-  { id: 5, title: "Bank Details", icon: Building2, subtitle: "Where to send funds" },
-  { id: 6, title: "Documents", icon: FileText, subtitle: "Verify your identity" },
+  { id: 1, title: "Passport Photograph", icon: Camera, subtitle: "Take or upload your photo" },
+  { id: 2, title: "Personal Information", icon: User, subtitle: "Let's get to know you" },
+  { id: 3, title: "Employment Details", icon: Briefcase, subtitle: "Where you work" },
+  { id: 4, title: "Loan Information", icon: Wallet, subtitle: "Tell us what you need" },
+  { id: 5, title: "Next of Kin", icon: Users, subtitle: "Emergency contact" },
+  { id: 6, title: "Bank Details", icon: Building2, subtitle: "Where to send funds" },
+  { id: 7, title: "Supporting Documents", icon: FileText, subtitle: "Verify your identity" },
 ] as const;
 
 const emptyDraft: LoanApplicationDraft = {
@@ -60,26 +61,28 @@ function ApplyPage() {
       if (!String(form[k] ?? "").trim()) e[k] = msg;
     };
     if (s === 1) {
+      if (!files.passportPhoto) e.passportPhoto = "Passport photograph is required to continue";
+    }
+    if (s === 2) {
       req("firstName"); req("lastName"); req("email"); req("phone");
       req("dateOfBirth"); req("gender"); req("address"); req("city");
       req("state"); req("nationality");
       if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Invalid email";
       if (form.phone && form.phone.replace(/\D/g, "").length < 7) e.phone = "Invalid phone";
     }
-    if (s === 2) {
+    if (s === 3) {
       req("employmentStatus"); req("monthlyIncome");
       if (form.employmentStatus === "employed" || form.employmentStatus === "self-employed") {
         req("employerName"); req("jobTitle");
       }
     }
-    if (s === 3) {
+    if (s === 4) {
       req("loanAmount"); req("loanPurpose"); req("loanTerm"); req("repaymentSource");
       if (form.loanAmount && Number(form.loanAmount) <= 0) e.loanAmount = "Enter a valid amount";
     }
-    if (s === 4) { req("kinFullName"); req("kinRelationship"); req("kinPhone"); req("kinAddress"); }
-    if (s === 5) { req("bankName"); req("accountNumber"); req("accountName"); }
-    if (s === 6) {
-      if (!files.passportPhoto) e.passportPhoto = "Passport photograph is required";
+    if (s === 5) { req("kinFullName"); req("kinRelationship"); req("kinPhone"); req("kinAddress"); }
+    if (s === 6) { req("bankName"); req("accountNumber"); req("accountName"); }
+    if (s === 7) {
       if (!files.idDocument) e.idDocument = "Government ID is required";
     }
     setErrors(e);
@@ -87,7 +90,8 @@ function ApplyPage() {
   }
 
   async function handleSubmit() {
-    if (!validateStep(6)) return;
+    if (!validateStep(7)) return;
+    if (!files.passportPhoto) { setStep(1); setErrors({ passportPhoto: "Passport photograph is required" }); return; }
     setServerError(null);
     setSubmitting(true);
     try {
@@ -100,7 +104,7 @@ function ApplyPage() {
     }
   }
 
-  function next() { if (validateStep(step)) setStep((s) => Math.min(6, s + 1)); }
+  function next() { if (validateStep(step)) setStep((s) => Math.min(STEPS.length, s + 1)); }
   function prev() { setStep((s) => Math.max(1, s - 1)); }
 
   const progress = (step / STEPS.length) * 100;
